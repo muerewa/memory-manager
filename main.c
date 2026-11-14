@@ -1,6 +1,6 @@
 #include <stdio.h>
+#include "mmemory.h"
 
-int main(void) {
-    printf("Hello, World!\n");
-    return 0;
+int main() {
+    return init_memory(10, 20);
 }
