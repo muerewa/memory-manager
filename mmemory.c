@@ -139,3 +139,69 @@ int swap_page(int v_page) {
     pg[v_page].dirty = 0;
     return frame;
 }
+
+int _write(VA ptr, void* pBuffer, size_t szBuffer) {
+    if (pBuffer == NULL || szBuffer == 0) return -1;
+
+    Block *b = head;
+    int valid = 0;
+    while (b != NULL) {
+        if (b->free == 0 && ptr >= b->va && (ptr + szBuffer) <= (b->va + b->size)) {
+            valid = 1;
+            break;
+        }
+        b = b->next;
+    }
+    if (!valid) return -1;
+
+    size_t written = 0;
+    VA curr_va = ptr;
+    char *src = (char*)pBuffer;
+
+    while (written < szBuffer) {
+        int v_page = curr_va / page_size;
+        int offset = curr_va % page_size;
+        size_t space_on_page = page_size - offset;
+        size_t bytes_left = szBuffer - written;
+        size_t chunk = (bytes_left < space_on_page) ? bytes_left : space_on_page;
+        int frame = swap_page(v_page);
+        memcpy(ram + (frame * page_size) + offset, src + written, chunk);
+        pg[v_page].dirty = 1;
+        written += chunk;
+        curr_va += chunk;
+    }
+
+    return 0;
+}
+int _read(VA ptr, void* pBuffer, size_t szBuffer) {
+    if (pBuffer == NULL || szBuffer == 0) return -1;
+
+    Block *b = head;
+    int valid = 0;
+    while (b != NULL) {
+        if (b->free == 0 && ptr >= b->va && (ptr + szBuffer) <= (b->va + b->size)) {
+            valid = 1;
+            break;
+        }
+        b = b->next;
+    }
+    if (!valid) return -1;
+
+    size_t read = 0;
+    VA curr_va = ptr;
+    char *dst = (char*)pBuffer;
+
+    while (read < szBuffer) {
+        int v_page = curr_va / page_size;
+        int offset = curr_va % page_size;
+        size_t space_on_page = page_size - offset;
+        size_t bytes_left = szBuffer - read;
+        size_t chunk = (bytes_left < space_on_page) ? bytes_left : space_on_page;
+        int frame = swap_page(v_page);
+        memcpy( dst + read, ram + (frame * page_size) + offset, chunk);
+        read += chunk;
+        curr_va += chunk;
+    }
+
+    return 0;
+}
