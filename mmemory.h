@@ -1,8 +1,6 @@
 #ifndef MMEMORY_H
 #define MMEMORY_H
 
-#include <stddef.h>
-
 typedef int VA;
 
 int init_memory(int n, int szPage);
